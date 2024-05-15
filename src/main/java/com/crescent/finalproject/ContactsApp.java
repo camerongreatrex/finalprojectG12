@@ -1,16 +1,17 @@
 package com.crescent.finalproject;
 
 // Necessary JavaFX and utility class imports
-
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -18,9 +19,8 @@ import javafx.stage.Stage;
 
 // Main class for the Contacts App, extending from JavaFX Application class
 public class ContactsApp extends Application {
-
     // TableView for displaying Person objects in a table format
-    private TableView<Person> table = new TableView<>();
+    private final TableView<Person> table = new TableView<>();
     // Observable list for managing Person data; updates the TableView automatically when data changes
     private final ObservableList<Person> data = FXCollections.observableArrayList(
             new Person("John", "Doe", "john.doe@example.com", "1234567890", "1234 Main St", "12345", "$100,000")
@@ -36,6 +36,7 @@ public class ContactsApp extends Application {
     // Override the start method to set up the GUI elements
     @Override
     public void start(Stage stage) {
+        //Create a scene with a group to allow for multiple elements in the scene
         Scene scene = new Scene(new Group());
         stage.setTitle("Contacts App"); // Title of the window
         stage.setWidth(1000); // Width of the window
@@ -55,10 +56,19 @@ public class ContactsApp extends Application {
         TableColumn postalCodeCol = configureColumn("Postal Code", "postalCode", 100);
         TableColumn networthCol = configureColumn("Networth", "networth", 100);
 
+        // Make columns editable
+        makeColumnEditable(firstNameCol, "firstName");
+        makeColumnEditable(lastNameCol, "lastName");
+        makeColumnEditable(emailCol, "email");
+        makeColumnEditable(phoneNumberCol, "phoneNumber");
+        makeColumnEditable(addressCol, "address");
+        makeColumnEditable(postalCodeCol, "postalCode");
+        makeColumnEditable(networthCol, "networth");
+
         table.setItems(data); // Link data list to table
         table.getColumns().addAll(firstNameCol, lastNameCol, emailCol, phoneNumberCol, addressCol, postalCodeCol, networthCol); // Add columns to table
 
-        // Setting up HBox with text fields and add button
+        // Setting up HBox with text fields and add button to allow for adding new people to the table
         hbox.setSpacing(3); // Space between elements in HBox
         hbox.getChildren().addAll(
                 createTextField("First Name", firstNameCol.getPrefWidth()),
@@ -70,7 +80,7 @@ public class ContactsApp extends Application {
                 createTextField("Networth", networthCol.getPrefWidth()),
                 createAddButton() // Add button to add new entries
         );
-
+        // Create a VBox to hold all elements in a single row and allow for adding new people to the table
         final VBox vbox = new VBox();
         vbox.setSpacing(5); // Space between elements in VBox
         vbox.setPadding(new Insets(10, 0, 0, 10)); // Padding around VBox
@@ -121,7 +131,70 @@ public class ContactsApp extends Application {
         return column;
     }
 
-    // Inner class to represent a person with properties for data binding
+    // Method to make a table column editable
+
+    /**
+     * @author Alla Redko
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @coauthor Cameron Greatrex     *  turned the old code chunks for each property method by adding
+     * a switch statement to determine which property of the Person object should be updated.
+     */
+    private void makeColumnEditable(TableColumn<Person, String> column, String propertyName) {
+        // Set the cell factory for the column to use a TextFieldTableCell allowing the cells to be edited as text fields
+        column.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        // Set the event handler for when an edit is committed (i.e. when the user clicks off the edited cell)
+        column.setOnEditCommit(
+                // Removed the need for "TableColumn.CellEditEvent<Person, String" because it is already defined in the handle method
+                new EventHandler<TableColumn.CellEditEvent<Person, String>>() {
+                    @Override
+                    public void handle(TableColumn.CellEditEvent<Person, String> t) {
+                        // Get the Person object for the row that was edited
+                        Person person = t.getTableView().getItems().get(t.getTablePosition().getRow());
+
+                        // Use a switch statement to determine which property of the Person object should be updated
+                        switch (propertyName) {
+                            case "firstName":
+                                // Update the first name property
+                                person.setFirstName(t.getNewValue());
+                                break;
+                            case "lastName":
+                                // Update the last name property
+                                person.setLastName(t.getNewValue());
+                                break;
+                            case "email":
+                                // Update the email property
+                                person.setEmail(t.getNewValue());
+                                break;
+                            case "phoneNumber":
+                                // Update the phone number property
+                                person.setPhoneNumber(t.getNewValue());
+                                break;
+                            case "address":
+                                // Update the address property
+                                person.setAddress(t.getNewValue());
+                                break;
+                            case "postalCode":
+                                // Update the postal code property
+                                person.setPostalCode(t.getNewValue());
+                                break;
+                            case "networth":
+                                // Update the networth property
+                                person.setNetworth(t.getNewValue());
+                                break;
+                        }
+                    }
+                }
+        );
+    }
+
+    // Inner class with OOP to represent any person with 7 properties
+
+    /**
+     * @author Alla Redko
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @coauthor Cameron Greatrex     *  added four properties to the person class including phoneNumber, address, postalCode, and networth
+     */
     public static class Person {
         private final SimpleStringProperty firstName, lastName, email, phoneNumber, address, postalCode, networth;
 
