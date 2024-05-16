@@ -34,16 +34,31 @@ public class ContactsApp extends Application {
     CSVWriter writer;
 
     // FileWriter needs to handle IOException, therefore I need to make a default constructor
+
+    /**
+     * @throws IOException The exception that is thrown when an I/O error occurs
+     */
     public ContactsApp() throws IOException {
-        writer = new CSVWriter(new FileWriter("/Users/cameron/Desktop/School/Grade 11/Computer Science/FinalProject/src/main/java/com/crescent/finalproject/output.csv", true));
+        writer = new CSVWriter(new FileWriter("/Users/cameron/Desktop/School/Grade 11/Computer Science/FinalProject/src/main/java/com/crescent/finalproject/table.csv", true));
     }
 
     // Main method to launch the JavaFX application
+
+    /**
+     * @param args The command line arguments
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
     // Override the start method to set up the GUI elements
+
+    /**
+     * @param stage The stage to display the GUI elements on
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @author Cameron Greatrex
+     * @coauthor Alla Redko
+     */
     @Override
     public void start(Stage stage) {
         //Create a scene with a group to allow for multiple elements in the scene
@@ -103,6 +118,13 @@ public class ContactsApp extends Application {
     }
 
     // Method to create text fields for input
+
+    /**
+     * @param promptText The text that will be displayed in the text field when it is empty
+     * @param maxWidth   The maximum width of the text field
+     * @return A TextField object with the specified prompt text and maximum width
+     * @author Cameron Greatrex
+     */
     private TextField createTextField(String promptText, double maxWidth) {
         TextField textField = new TextField();
         textField.setPromptText(promptText); // Placeholder text
@@ -111,6 +133,12 @@ public class ContactsApp extends Application {
     }
 
     // Method to create an add button and define its event handler
+
+    /**
+     * @return A Button object that adds a new person to the table when clicked
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @author Cameron Greatrex
+     */
     private Button createAddButton() {
         final Button addButton = new Button("Add");
         addButton.setOnAction(event -> {
@@ -141,6 +169,15 @@ public class ContactsApp extends Application {
     }
 
     // Method to configure and create table columns
+
+    /**
+     * @param columnName   The name of the column to be displayed in the table
+     * @param propertyName The name of the property in the Person objects to be displayed in this column
+     * @param minWidth     The minimum width of the column
+     * @return A TableColumn object with the specified name, property, and minimum width
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @author Cameron Greatrex
+     */
     private TableColumn configureColumn(String columnName, String propertyName, double minWidth) {
         TableColumn column = new TableColumn(columnName);
         column.setMinWidth(minWidth); // Minimum width of the column
