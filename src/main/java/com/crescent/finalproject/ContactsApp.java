@@ -1,10 +1,12 @@
 package com.crescent.finalproject;
 
 // Necessary JavaFX and utility class imports
+
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import com.opencsv.CSVWriter;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
@@ -17,16 +19,24 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+import java.io.FileWriter;
+import java.io.IOException;
+
 // Main class for the Contacts App, extending from JavaFX Application class
 public class ContactsApp extends Application {
     // TableView for displaying Person objects in a table format
     private final TableView<Person> table = new TableView<>();
     // Observable list for managing Person data; updates the TableView automatically when data changes
-    private final ObservableList<Person> data = FXCollections.observableArrayList(
-            new Person("John", "Doe", "john.doe@example.com", "1234567890", "1234 Main St", "12345", "$100,000")
-    );
+    private final ObservableList<Person> data = FXCollections.observableArrayList();
     // Horizontal Box for layout of input fields and button
     final HBox hbox = new HBox();
+    // Declare the CSVWriter to read and write contacts to a CSV file
+    CSVWriter writer;
+
+    // FileWriter needs to handle IOException, therefore I need to make a default constructor
+    public ContactsApp() throws IOException {
+        writer = new CSVWriter(new FileWriter("/Users/cameron/Desktop/School/Grade 11/Computer Science/FinalProject/src/main/java/com/crescent/finalproject/output.csv", true));
+    }
 
     // Main method to launch the JavaFX application
     public static void main(String[] args) {
@@ -114,7 +124,14 @@ public class ContactsApp extends Application {
                     ((TextField) hbox.getChildren().get(5)).getText(),
                     ((TextField) hbox.getChildren().get(6)).getText()
             );
-            data.add(newPerson); // Add new person to observable list
+            data.add(newPerson); // Add new person to an observable list
+            // Write new person to CSV when they are created
+            writer.writeNext(new String[]{newPerson.getFirstName(), newPerson.getLastName(), newPerson.getEmail(), newPerson.getPhoneNumber(), newPerson.getAddress(), newPerson.getPostalCode(), newPerson.getNetworth()});
+            try {
+                writer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Clear all text fields after adding new entry
             hbox.getChildren().stream()
                     .filter(node -> node instanceof TextField)
@@ -183,10 +200,20 @@ public class ContactsApp extends Application {
                                 person.setNetworth(t.getNewValue());
                                 break;
                         }
+
+                        // Write person to CSV when they're edited
+                        writer.writeNext(new String[]{person.getFirstName(), person.getLastName(), person.getEmail(), person.getPhoneNumber(), person.getAddress(), person.getPostalCode(), person.getNetworth()});
+                        try {
+                            writer.flush();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
         );
     }
+    //TODO: add a method to read the CSV file and populate the table with the data
+
 
     // Inner class with OOP to represent any person with 7 properties
 
