@@ -2,12 +2,12 @@ package com.crescent.finalproject;
 
 // Necessary JavaFX and utility class imports
 
+import com.opencsv.CSVReader;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import com.opencsv.CSVWriter;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -19,8 +19,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
 
 // Main class for the Contacts App, extending from JavaFX Application class
 public class ContactsApp extends Application {
@@ -33,25 +36,21 @@ public class ContactsApp extends Application {
     // Declare the CSVWriter to read and write contacts to a CSV file
     CSVWriter writer;
 
-    // FileWriter needs to handle IOException, therefore I need to make a default constructor
-
     /**
      * @throws IOException The exception that is thrown when an I/O error occurs
      */
+    // Default constructor because FileWriter needs to handle IOException
     public ContactsApp() throws IOException {
-        writer = new CSVWriter(new FileWriter("/Users/cameron/Desktop/School/Grade 11/Computer Science/FinalProject/src/main/java/com/crescent/finalproject/table.csv", true));
+        writer = new CSVWriter(new FileWriter("src/main/java/com/crescent/finalproject/table.csv", true));
     }
-
-    // Main method to launch the JavaFX application
 
     /**
      * @param args The command line arguments
      */
+    // Main method to launch the JavaFX application
     public static void main(String[] args) {
         launch(args);
     }
-
-    // Override the start method to set up the GUI elements
 
     /**
      * @param stage The stage to display the GUI elements on
@@ -59,6 +58,7 @@ public class ContactsApp extends Application {
      * @author Cameron Greatrex
      * @coauthor Alla Redko
      */
+    // Override the start method to set up the GUI elements
     @Override
     public void start(Stage stage) {
         //Create a scene with a group to allow for multiple elements in the scene
@@ -115,9 +115,10 @@ public class ContactsApp extends Application {
 
         stage.setScene(scene); // Set the scene on the stage
         stage.show(); // Display the stage
-    }
 
-    // Method to create text fields for input
+        // Load contacts from CSV
+        loadContactsFromCSV();
+    }
 
     /**
      * @param promptText The text that will be displayed in the text field when it is empty
@@ -125,6 +126,7 @@ public class ContactsApp extends Application {
      * @return A TextField object with the specified prompt text and maximum width
      * @author Cameron Greatrex
      */
+    // Method to create text fields for inputs
     private TextField createTextField(String promptText, double maxWidth) {
         TextField textField = new TextField();
         textField.setPromptText(promptText); // Placeholder text
@@ -132,43 +134,50 @@ public class ContactsApp extends Application {
         return textField;
     }
 
-    // Method to create an add button and define its event handler
-
     /**
      * @return A Button object that adds a new person to the table when clicked
      * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
      * @author Cameron Greatrex
      */
+    // Method to create an add button and define its event handler
+    // Method to create an add button and define its event handler
     private Button createAddButton() {
         final Button addButton = new Button("Add");
+
+        // Check if at least one text field is filled before adding a new person
         addButton.setOnAction(event -> {
-            // Creates a new Person object from input fields and adds it to the data list
-            Person newPerson = new Person(
-                    ((TextField) hbox.getChildren().get(0)).getText(),
-                    ((TextField) hbox.getChildren().get(1)).getText(),
-                    ((TextField) hbox.getChildren().get(2)).getText(),
-                    ((TextField) hbox.getChildren().get(3)).getText(),
-                    ((TextField) hbox.getChildren().get(4)).getText(),
-                    ((TextField) hbox.getChildren().get(5)).getText(),
-                    ((TextField) hbox.getChildren().get(6)).getText()
-            );
-            data.add(newPerson); // Add new person to an observable list
-            // Write new person to CSV when they are created
-            writer.writeNext(new String[]{newPerson.getFirstName(), newPerson.getLastName(), newPerson.getEmail(), newPerson.getPhoneNumber(), newPerson.getAddress(), newPerson.getPostalCode(), newPerson.getNetworth()});
-            try {
-                writer.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+            // Extract text from each text field
+            String firstName = ((TextField) hbox.getChildren().get(0)).getText();
+            String lastName = ((TextField) hbox.getChildren().get(1)).getText();
+            String email = ((TextField) hbox.getChildren().get(2)).getText();
+            String phoneNumber = ((TextField) hbox.getChildren().get(3)).getText();
+            String address = ((TextField) hbox.getChildren().get(4)).getText();
+            String postalCode = ((TextField) hbox.getChildren().get(5)).getText();
+            String networth = ((TextField) hbox.getChildren().get(6)).getText();
+
+            // Check if at least one field is not empty
+            if (!firstName.isEmpty()) {
+                // Create a new Person object with the input data
+                Person newPerson = new Person(firstName, lastName, email, phoneNumber, address, postalCode, networth);
+                data.add(newPerson); // Add new person to the observable list
+                saveContactsToCSV(); // Save the entire list to the CSV file
+
+                // Clear all text fields after adding new entry
+                hbox.getChildren().stream()
+                        .filter(node -> node instanceof TextField)
+                        .forEach(node -> ((TextField) node).clear());
+            } else {
+                // Show an alert if all fields are empty
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Warning");
+                alert.setHeaderText(null);
+                alert.setContentText("At least the first name must be filled to add a new contact.");
+                alert.showAndWait();
             }
-            // Clear all text fields after adding new entry
-            hbox.getChildren().stream()
-                    .filter(node -> node instanceof TextField)
-                    .forEach(node -> ((TextField) node).clear());
         });
         return addButton;
     }
 
-    // Method to configure and create table columns
 
     /**
      * @param columnName   The name of the column to be displayed in the table
@@ -178,6 +187,7 @@ public class ContactsApp extends Application {
      * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
      * @author Cameron Greatrex
      */
+    // Method to configure and create table columns
     private TableColumn configureColumn(String columnName, String propertyName, double minWidth) {
         TableColumn column = new TableColumn(columnName);
         column.setMinWidth(minWidth); // Minimum width of the column
@@ -185,80 +195,100 @@ public class ContactsApp extends Application {
         return column;
     }
 
-    // Method to make a table column editable
-
     /**
      * @author Alla Redko
      * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
      * @coauthor Cameron Greatrex     *  turned the old code chunks for each property method by adding
-     * a switch statement to determine which property of the Person object should be updated.
      */
+    // Method to determine which property of the Person object should be updated and update it
     private void makeColumnEditable(TableColumn<Person, String> column, String propertyName) {
         // Set the cell factory for the column to use a TextFieldTableCell allowing the cells to be edited as text fields
         column.setCellFactory(TextFieldTableCell.forTableColumn());
-
         // Set the event handler for when an edit is committed (i.e. when the user clicks off the edited cell)
-        column.setOnEditCommit(
-                // Removed the need for "TableColumn.CellEditEvent<Person, String" because it is already defined in the handle method
-                new EventHandler<TableColumn.CellEditEvent<Person, String>>() {
-                    @Override
-                    public void handle(TableColumn.CellEditEvent<Person, String> t) {
-                        // Get the Person object for the row that was edited
-                        Person person = t.getTableView().getItems().get(t.getTablePosition().getRow());
-
-                        // Use a switch statement to determine which property of the Person object should be updated
-                        switch (propertyName) {
-                            case "firstName":
-                                // Update the first name property
-                                person.setFirstName(t.getNewValue());
-                                break;
-                            case "lastName":
-                                // Update the last name property
-                                person.setLastName(t.getNewValue());
-                                break;
-                            case "email":
-                                // Update the email property
-                                person.setEmail(t.getNewValue());
-                                break;
-                            case "phoneNumber":
-                                // Update the phone number property
-                                person.setPhoneNumber(t.getNewValue());
-                                break;
-                            case "address":
-                                // Update the address property
-                                person.setAddress(t.getNewValue());
-                                break;
-                            case "postalCode":
-                                // Update the postal code property
-                                person.setPostalCode(t.getNewValue());
-                                break;
-                            case "networth":
-                                // Update the networth property
-                                person.setNetworth(t.getNewValue());
-                                break;
-                        }
-
-                        // Write person to CSV when they're edited
-                        writer.writeNext(new String[]{person.getFirstName(), person.getLastName(), person.getEmail(), person.getPhoneNumber(), person.getAddress(), person.getPostalCode(), person.getNetworth()});
-                        try {
-                            writer.flush();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-        );
+        column.setOnEditCommit(t -> {
+            Person person = t.getTableView().getItems().get(t.getTablePosition().getRow());
+            // Switch statement to determine which property of the Person object should be updated
+            switch (propertyName) {
+                case "firstName":
+                    person.setFirstName(t.getNewValue());
+                    break;
+                case "lastName":
+                    person.setLastName(t.getNewValue());
+                    break;
+                case "email":
+                    person.setEmail(t.getNewValue());
+                    break;
+                case "phoneNumber":
+                    person.setPhoneNumber(t.getNewValue());
+                    break;
+                case "address":
+                    person.setAddress(t.getNewValue());
+                    break;
+                case "postalCode":
+                    person.setPostalCode(t.getNewValue());
+                    break;
+                case "networth":
+                    person.setNetworth(t.getNewValue());
+                    break;
+            }
+            saveContactsToCSV(); // Save the entire list to the CSV file
+        });
     }
-    //TODO: add a method to read the CSV file and populate the table with the data
 
+    /**
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @author Cameron Greatrex
+     * Populate the table with contacts from a CSV file
+     */
+    // Method to load contacts from a CSV file and populate the table with the new person
+    private void loadContactsFromCSV() {
+        data.clear(); // Clear existing data
+        try {
+            String csvFilePath = Paths.get("src/main/java/com/crescent/finalproject/table.csv").toAbsolutePath().toString();
+            CSVReader csvReader = new CSVReader(new FileReader(csvFilePath));
 
-    // Inner class with OOP to represent any person with 7 properties
+            List<String[]> allData = csvReader.readAll();
+            for (String[] row : allData) {
+                if (row.length == 7) {
+                    Person person = new Person(row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
+                    data.add(person);
+                }
+            }
+            csvReader.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @author Cameron Greatrex
+     */
+    // Method to save the entire list of contacts to a CSV file
+    private void saveContactsToCSV() {
+        try (CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/com/crescent/finalproject/table.csv"))) {
+            for (Person person : data) {
+                writer.writeNext(new String[]{
+                        person.getFirstName(),
+                        person.getLastName(),
+                        person.getEmail(),
+                        person.getPhoneNumber(),
+                        person.getAddress(),
+                        person.getPostalCode(),
+                        person.getNetworth()
+                });
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * @author Alla Redko
      * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
      * @coauthor Cameron Greatrex     *  added four properties to the person class including phoneNumber, address, postalCode, and networth
      */
+    // Inner class with OOP to represent any person with 7 properties
     public static class Person {
         private final SimpleStringProperty firstName, lastName, email, phoneNumber, address, postalCode, networth;
 
