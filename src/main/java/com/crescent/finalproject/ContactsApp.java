@@ -4,6 +4,7 @@ package com.crescent.finalproject;
 
 import com.opencsv.CSVReader;
 import javafx.application.Application;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -140,7 +141,6 @@ public class ContactsApp extends Application {
      * @author Cameron Greatrex
      */
     // Method to create an add button and define its event handler
-    // Method to create an add button and define its event handler
     private Button createAddButton() {
         final Button addButton = new Button("Add");
 
@@ -236,9 +236,8 @@ public class ContactsApp extends Application {
     }
 
     /**
-     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @link <a href="https://opencsv.sourceforge.net/">...</a>
      * @author Cameron Greatrex
-     * Populate the table with contacts from a CSV file
      */
     // Method to load contacts from a CSV file and populate the table with the new person
     private void loadContactsFromCSV() {
@@ -261,23 +260,34 @@ public class ContactsApp extends Application {
     }
 
     /**
-     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @link <a href="https://opencsv.sourceforge.net/">...</a>
      * @author Cameron Greatrex
      */
     // Method to save the entire list of contacts to a CSV file
     private void saveContactsToCSV() {
         try (CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/com/crescent/finalproject/table.csv"))) {
+            // Create a temporary list to hold valid contacts
+            ObservableList<Person> validContacts = FXCollections.observableArrayList();
+
+            // Iterate through the data list and add valid contacts to the temporary list
             for (Person person : data) {
-                writer.writeNext(new String[]{
-                        person.getFirstName(),
-                        person.getLastName(),
-                        person.getEmail(),
-                        person.getPhoneNumber(),
-                        person.getAddress(),
-                        person.getPostalCode(),
-                        person.getNetworth()
-                });
+                if (!person.getFirstName().isEmpty()) {
+                    validContacts.add(person);
+                    writer.writeNext(new String[]{
+                            person.getFirstName(),
+                            person.getLastName(),
+                            person.getEmail(),
+                            person.getPhoneNumber(),
+                            person.getAddress(),
+                            person.getPostalCode(),
+                            person.getNetworth()
+                    });
+                }
             }
+
+            // Clear the original data list and add back only the valid contacts
+            data.clear();
+            data.addAll(validContacts);
         } catch (IOException e) {
             e.printStackTrace();
         }
