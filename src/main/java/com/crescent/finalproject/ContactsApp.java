@@ -4,7 +4,6 @@ package com.crescent.finalproject;
 
 import com.opencsv.CSVReader;
 import javafx.application.Application;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -93,6 +92,40 @@ public class ContactsApp extends Application {
 
         table.setItems(data); // Link data list to table
         table.getColumns().addAll(firstNameCol, lastNameCol, emailCol, phoneNumberCol, addressCol, postalCodeCol, networthCol); // Add columns to table
+
+        // Create a new column called "Delete Contact" to hold the delete button
+        TableColumn<Person, Void> deleteCol = new TableColumn<>("Delete Contact");
+        // Set the cell factory for the delete column to create a new TableCell for each row
+        deleteCol.setCellFactory(col -> new TableCell<Person, Void>() {
+            // Create a delete button for each row
+            private Button deleteButton = new Button("Delete");
+
+            {
+                // Set an action for the delete button
+                deleteButton.setOnAction(event -> {
+                    // Get the person associated with the current row
+                    Person person = getTableView().getItems().get(getIndex());
+                    // Call the deletePerson method to remove the person from the data list and update the CSV
+                    deletePerson(person);
+                });
+            }
+
+            // Override the updateItem method to update the TableCell with the delete button when a person is present
+            @Override
+            public void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                // If the row is empty, set the graphic to null (no button)
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    // Otherwise, set the graphic to the delete button
+                    setGraphic(deleteButton);
+                }
+            }
+        });
+
+        // Add the delete column to the table
+        table.getColumns().add(deleteCol);
 
         // Setting up HBox with text fields and add button to allow for adding new people to the table
         hbox.setSpacing(3); // Space between elements in HBox
@@ -233,6 +266,16 @@ public class ContactsApp extends Application {
             }
             saveContactsToCSV(); // Save the entire list to the CSV file
         });
+    }
+
+    /**
+     * @param person The person to be deleted from the table
+     * @author Cameron Greatrex
+     */
+    // Method to delete a person from the table and save the updated list to the CSV file
+    public void deletePerson(Person person) {
+        data.remove(person);
+        saveContactsToCSV();
     }
 
     /**
