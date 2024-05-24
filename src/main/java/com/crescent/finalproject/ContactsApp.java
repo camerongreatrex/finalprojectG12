@@ -90,6 +90,30 @@ public class ContactsApp extends Application {
         makeColumnEditable(postalCodeCol, "postalCode");
         makeColumnEditable(networthCol, "networth");
 
+        // TODO: FIX THE FACT THAT YOU CANT EDIT THE NETWORTH COLUMN WITH CUSTOM RENDERING
+        // Custom cell factory for the Networth column to render positive values in green and negative values in red
+        networthCol.setCellFactory(col -> new TableCell<Person, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                // If the item is null or the cell is empty, clear the text and style
+                if (item == null || empty) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    // Otherwise, set the text to the item value
+                    setText(item);
+
+                    // Parse the item value as a double
+                    double networth = Double.parseDouble(item);
+
+                    // Set the text color based on the networth value
+                    setTextFill(networth >= 0 ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
+                }
+            }
+        });
+
         table.setItems(data); // Link data list to table
         table.getColumns().addAll(firstNameCol, lastNameCol, emailCol, phoneNumberCol, addressCol, postalCodeCol, networthCol); // Add columns to table
 
