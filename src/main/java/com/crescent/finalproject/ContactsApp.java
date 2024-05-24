@@ -64,8 +64,8 @@ public class ContactsApp extends Application {
         //Create a scene with a group to allow for multiple elements in the scene
         Scene scene = new Scene(new Group());
         stage.setTitle("Contacts App"); // Title of the window
-        stage.setWidth(1000); // Width of the window
-        stage.setHeight(550); // Height of the window
+        stage.setWidth(1200); // Width of the window
+        stage.setHeight(600); // Height of the window
 
         final Label label = new Label("Contact Book");
         label.setFont(new Font("Georgia", 20)); // Font style for the label
@@ -75,9 +75,9 @@ public class ContactsApp extends Application {
         // Configuring columns for each attribute of Person
         TableColumn firstNameCol = configureColumn("First Name", "firstName", 100);
         TableColumn lastNameCol = configureColumn("Last Name", "lastName", 100);
-        TableColumn emailCol = configureColumn("Email", "email", 200);
+        TableColumn emailCol = configureColumn("Email", "email", 210);
         TableColumn phoneNumberCol = configureColumn("Phone Number", "phoneNumber", 100);
-        TableColumn addressCol = configureColumn("Address", "address", 100);
+        TableColumn addressCol = configureColumn("Address", "address", 180);
         TableColumn postalCodeCol = configureColumn("Postal Code", "postalCode", 100);
         TableColumn networthCol = configureColumn("Networth", "networth", 100);
 
@@ -90,41 +90,18 @@ public class ContactsApp extends Application {
         makeColumnEditable(postalCodeCol, "postalCode");
         makeColumnEditable(networthCol, "networth");
 
-        // TODO: FIX THE FACT THAT YOU CANT EDIT THE NETWORTH COLUMN WITH CUSTOM RENDERING
-        // Custom cell factory for the Networth column to render positive values in green and negative values in red
-        networthCol.setCellFactory(col -> new TableCell<Person, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-
-                // If the item is null or the cell is empty, clear the text and style
-                if (item == null || empty) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    // Otherwise, set the text to the item value
-                    setText(item);
-
-                    // Parse the item value as a double
-                    double networth = Double.parseDouble(item);
-
-                    // Set the text color based on the networth value
-                    setTextFill(networth >= 0 ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
-                }
-            }
-        });
-
         table.setItems(data); // Link data list to table
         table.getColumns().addAll(firstNameCol, lastNameCol, emailCol, phoneNumberCol, addressCol, postalCodeCol, networthCol); // Add columns to table
 
         // Create a new column called "Delete Contact" to hold the delete button
-        TableColumn<Person, Void> deleteCol = new TableColumn<>("Delete Contact");
+        TableColumn<Person, Void> deleteCol = new TableColumn<>("Delete");
         // Set the cell factory for the delete column to create a new TableCell for each row
         deleteCol.setCellFactory(col -> new TableCell<Person, Void>() {
             // Create a delete button for each row
             private Button deleteButton = new Button("Delete");
 
             {
+                deleteButton.setStyle("-fx-background-color: #ff0000; -fx-text-fill: white;"); // Set the button style
                 // Set an action for the delete button
                 deleteButton.setOnAction(event -> {
                     // Get the person associated with the current row
