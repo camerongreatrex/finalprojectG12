@@ -101,6 +101,9 @@ public class ContactsApp extends Application {
             private Button deleteButton = new Button("Delete");
 
             {
+                // Colour the 'Delete" column header red when there is one or more contact
+                deleteCol.setStyle("-fx-alignment: CENTER;"); // Center the button in the cell
+                deleteCol.setStyle("-fx-color: #ff0000;"); // Set the color of the button to red
                 deleteButton.setStyle("-fx-background-color: #ff0000; -fx-text-fill: white;"); // Set the button style
                 // Set an action for the delete button
                 deleteButton.setOnAction(event -> {
