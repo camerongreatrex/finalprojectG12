@@ -23,7 +23,6 @@ import javafx.stage.Stage;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -91,13 +90,15 @@ public class ContactsApp extends Application {
         makeColumnEditable(postalCodeCol, "postalCode");
         makeColumnEditable(networthCol, "networth");
 
+        //TODO: Add ListView to maybe create a list of addresses
+
         table.setItems(data); // Link data list to table
         table.getColumns().addAll(firstNameCol, lastNameCol, emailCol, phoneNumberCol, addressCol, postalCodeCol, networthCol); // Add columns to table
 
         // Create a new column called "Delete Contact" to hold the delete button
         TableColumn<Person, Void> deleteCol = new TableColumn<>("Delete");
-        // Set the cell factory for the delete column to create a new TableCell for each row
-        deleteCol.setCellFactory(col -> new TableCell<Person, Void>() {
+        // Set the cell factory for the delete column to create a new TableCell for each row of delete buttons
+        deleteCol.setCellFactory(col -> new TableCell<>() {
             // Create a delete button for each row
             private final Button deleteButton = new Button("Delete");
 
@@ -109,8 +110,9 @@ public class ContactsApp extends Application {
                 deleteButton.setOnAction(event -> {
                     // Get the person associated with the current row
                     Person person = getTableView().getItems().get(getIndex());
-                    // Call the deletePerson method to remove the person from the data list and update the CSV
-                    deletePerson(person);
+                    // Remove the person from the table
+                    data.remove(person);
+                    saveContactsToCSV(); // Save changes to CSV after deleting
                 });
             }
 
@@ -128,7 +130,7 @@ public class ContactsApp extends Application {
             }
         });
 
-        // Add the delete column to the table
+        // Add the delete column with buttons to the table
         table.getColumns().add(deleteCol);
 
         // Setting up HBox with text fields and add button to allow for adding new people to the table
@@ -141,7 +143,7 @@ public class ContactsApp extends Application {
                 createTextField("Address", addressCol.getPrefWidth()),
                 createTextField("Postal Code", postalCodeCol.getPrefWidth()),
                 createTextField("Networth", networthCol.getPrefWidth()),
-                createAddButton() // Add button to add new entries
+                createContactButton() // Add button to add new entries
         );
         // Create a VBox to hold all elements in a single row and allow for adding new people to the table
         final VBox vbox = new VBox();
@@ -159,24 +161,11 @@ public class ContactsApp extends Application {
     }
 
     /**
-     * @param promptText The text that will be displayed in the text field when it is empty
-     * @param maxWidth   The maximum width of the text field
-     * @return A TextField object with the specified prompt text and maximum width
-     */
-    // Method to create text fields for inputs
-    private TextField createTextField(String promptText, double maxWidth) {
-        TextField textField = new TextField();
-        textField.setPromptText(promptText); // Placeholder text
-        textField.setMaxWidth(maxWidth); // Maximum width for text field
-        return textField;
-    }
-
-    /**
      * @return A Button object that adds a new person to the table when clicked
      * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
      */
     // Method to create an add button and define its event handler
-    private Button createAddButton() {
+    private Button createContactButton() {
         final Button addButton = new Button("Add");
 
         // Check if at least one text field is filled before adding a new person
@@ -193,62 +182,16 @@ public class ContactsApp extends Application {
             // Validate inputs
             if (validateInputs(firstName, lastName, email, phoneNumber, address, postalCode, networth)) {
                 data.add(new Person(firstName, lastName, email, phoneNumber, address, postalCode, networth)); // Add new person to the table
-
                 // Clear text fields after adding
                 clearTextFields();
             } else {
-                showAlert(Alert.AlertType.WARNING, "Invalid Input", "Please ensure all fields are filled in correctly.");
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Invalid Input");
+                alert.setContentText("Please ensure all fields are filled in correctly.");
+                alert.showAndWait();
             }
         });
         return addButton;
-    }
-
-    // Validate inputs for a new contact entry
-    private boolean validateInputs(String firstName, String lastName, String email, String phoneNumber, String address, String postalCode, String networth) {
-        // Validation rules for each field
-        boolean isValidFirstName = !firstName.isEmpty();
-        boolean isValidLastName = !lastName.isEmpty();
-        boolean isValidEmail = Pattern.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$", email);
-        boolean isValidPhoneNumber = Pattern.matches("^\\d{10}$", phoneNumber);
-        boolean isValidAddress = !address.isEmpty();
-        boolean isValidPostalCode = Pattern.matches("^\\d{5}$", postalCode);
-        boolean isValidNetworth = Pattern.matches("^\\d+(\\.\\d{1,2})?$", networth);
-
-        return isValidFirstName && isValidLastName && isValidEmail && isValidPhoneNumber && isValidAddress && isValidPostalCode && isValidNetworth;
-    }
-
-    // Clear all text fields after adding a new contact
-    private void clearTextFields() {
-        for (int i = 0; i < hbox.getChildren().size() - 1; i++) {
-            ((TextField) hbox.getChildren().get(i)).clear();
-        }
-    }
-
-    /**
-     * @param type    The type of alert to display
-     * @param title   The title of the alert dialog
-     * @param message The message to display in the alert dialog
-     */
-    // Display an alert with the specified type, title, and message
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    /**
-     * @param columnName The name of the column to display
-     * @param property   The property of the Person class to bind to
-     * @param width      The width of the column
-     * @return A TableColumn object configured with the specified name, property, and width
-     */
-    // Method to configure columns
-    private TableColumn<Person, String> configureColumn(String columnName, String property, double width) {
-        TableColumn<Person, String> column = new TableColumn<>(columnName);
-        column.setMinWidth(width);
-        column.setCellValueFactory(new PropertyValueFactory<>(property));
-        return column;
     }
 
     /**
@@ -257,6 +200,7 @@ public class ContactsApp extends Application {
      */
     // Method to make columns editable
     private void makeColumnEditable(TableColumn<Person, String> column, String property) {
+        // Set the cell factory to allow for editing text fields in the table
         column.setCellFactory(TextFieldTableCell.forTableColumn());
         column.setOnEditCommit(event -> {
             Person person = event.getRowValue();
@@ -287,18 +231,14 @@ public class ContactsApp extends Application {
         });
     }
 
-    // Delete a person from the table and update the CSV file
-    private void deletePerson(Person person) {
-        data.remove(person);
-        saveContactsToCSV(); // Save changes to CSV after deleting
-    }
-
+    /**
+     * @throws IOException The exception that is thrown when an I/O error occurs
+     * @author Cameron Greatrex
+     * @link <a href="https://www.baeldung.com/opencsv">...</a>
+     */
     // Save contacts to a CSV file
     private void saveContactsToCSV() {
         try (CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/com/crescent/finalproject/table.csv"))) {
-            // Write header to CSV file to know what each column represents and needs to include
-            String[] header = {"First Name", "Last Name", "Email", "Phone Number", "Address", "Postal Code", "Networth"};
-            writer.writeNext(header);
 
             // Write each person's data to CSV file
             for (Person person : data) {
@@ -318,6 +258,10 @@ public class ContactsApp extends Application {
         }
     }
 
+    /**
+     * @author Cameron Greatrex
+     * @link <a href="https://www.baeldung.com/opencsv">...</a>
+     */
     // Load contacts from a CSV file into the table
     private void loadContactsFromCSV() {
         try (CSVReader reader = new CSVReader(new FileReader("src/main/java/com/crescent/finalproject/table.csv"))) {
@@ -332,7 +276,77 @@ public class ContactsApp extends Application {
         }
     }
 
-    // Person class to represent each contact
+    /**
+     * @param firstName   The first name of the contact
+     * @param lastName    The last name of the contact
+     * @param email       The email of the contact
+     * @param phoneNumber The phone number of the contact
+     * @param address     The address of the contact
+     * @param postalCode  The postal code of the contact
+     * @param networth    The networth of the contact
+     * @return A boolean value indicating whether the inputs are valid
+     * @author Cameron Greatrex
+     * @coauthor ChatGPT
+     * ChatGPT helped with the regex and patterns for all the validation rules. Cameron Greatrex implemented the isEmpty() method
+     * the prompt used after creating the base method was "Please ensure that the inputted Strings follow normal guidelines as seen online
+     */
+    // Validate inputs for a new contact entry
+    private boolean validateInputs(String firstName, String lastName, String email, String phoneNumber, String address, String postalCode, String networth) {
+        // Validation rules for each field
+        boolean isValidFirstName = !firstName.isEmpty();
+        boolean isValidLastName = !lastName.isEmpty();
+        boolean isValidEmail = Pattern.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$", email);
+        boolean isValidPhoneNumber = Pattern.matches("^\\d{10}$", phoneNumber);
+        boolean isValidAddress = !address.isEmpty();
+        boolean isValidPostalCode = Pattern.matches("^\\p{Alpha}\\d\\p{Alpha} \\d\\p{Alpha}\\d$", postalCode);
+        boolean isValidNetworth = Pattern.matches("^\\d+(\\.\\d{1,2})?$", networth);
+
+        return isValidFirstName && isValidLastName && isValidEmail && isValidPhoneNumber && isValidAddress && isValidPostalCode && isValidNetworth;
+    }
+
+    /**
+     * @author Cameron Greatrex
+     */
+    // Clear all text fields after adding a new contact
+    private void clearTextFields() {
+        for (int i = 0; i < hbox.getChildren().size() - 1; i++) {
+            ((TextField) hbox.getChildren().get(i)).clear();
+        }
+    }
+
+    /**
+     * @param columnName The name of the column to display
+     * @param property   The property of the Person class to bind to
+     * @param width      The width of the column
+     * @return A TableColumn object configured with the specified name, property, and width
+     */
+    // Method to configure columns
+    private TableColumn<Person, String> configureColumn(String columnName, String property, double width) {
+        TableColumn<Person, String> column = new TableColumn<>(columnName);
+        column.setMinWidth(width);
+        column.setCellValueFactory(new PropertyValueFactory<>(property));
+        return column;
+    }
+
+    /**
+     * @param promptText The text that will be displayed in the text field when it is empty
+     * @param maxWidth   The maximum width of the text field
+     * @return A TextField object with the specified prompt text and maximum width
+     */
+    // Method to create text fields for inputs
+    private TextField createTextField(String promptText, double maxWidth) {
+        TextField textField = new TextField();
+        textField.setPromptText(promptText); // Placeholder text
+        textField.setMaxWidth(maxWidth); // Maximum width for text field
+        return textField;
+    }
+
+    /**
+     * @author Alla Redko
+     * @link <a href="https://docs.oracle.com/javafx/2/ui_controls/table-view.htm">...</a>
+     * @coauthor Cameron Greatrex     *  added four properties to the person class including phoneNumber, address, postalCode, and networth
+     */
+    // Inner class with OOP to represent any person with 7 properties
     public static class Person {
         private final SimpleStringProperty firstName;
         private final SimpleStringProperty lastName;
