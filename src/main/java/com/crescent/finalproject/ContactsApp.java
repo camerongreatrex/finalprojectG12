@@ -232,27 +232,32 @@ public class ContactsApp extends Application {
     }
 
     /**
-     * @throws IOException The exception that is thrown when an I/O error occurs
      * @author Cameron Greatrex
      * @link <a href="https://www.baeldung.com/opencsv">...</a>
      */
     // Save contacts to a CSV file
     private void saveContactsToCSV() {
         try (CSVWriter writer = new CSVWriter(new FileWriter("src/main/java/com/crescent/finalproject/table.csv"))) {
-
-            // Write each person's data to CSV file
+            // Create a temporary list to hold valid contacts
+            ObservableList<Person> validContacts = FXCollections.observableArrayList();
+            // Iterate through the data list and add valid contacts to the temporary list
             for (Person person : data) {
-                String[] line = {
-                        person.getFirstName(),
-                        person.getLastName(),
-                        person.getEmail(),
-                        person.getPhoneNumber(),
-                        person.getAddress(),
-                        person.getPostalCode(),
-                        person.getNetworth()
-                };
-                writer.writeNext(line);
+                if (!person.getFirstName().isEmpty()) {
+                    validContacts.add(person);
+                    writer.writeNext(new String[]{
+                            person.getFirstName(),
+                            person.getLastName(),
+                            person.getEmail(),
+                            person.getPhoneNumber(),
+                            person.getAddress(),
+                            person.getPostalCode(),
+                            person.getNetworth()
+                    });
+                }
             }
+            // Clear the original data list and add back only the valid contacts
+            data.clear();
+            data.addAll(validContacts);
         } catch (IOException e) {
             e.printStackTrace();
         }
