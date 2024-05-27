@@ -117,6 +117,7 @@ public class ContactsApp extends Application {
             }
 
             // Override the updateItem method to update the TableCell with the delete button when a person is present
+            // Dynamically update the table cell with the delete button when a person is present in the table
             @Override
             public void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
